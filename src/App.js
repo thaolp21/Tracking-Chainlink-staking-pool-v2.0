@@ -4,8 +4,8 @@ import TrackingStakingPool from "./components/TrackingStakingPool";
 
 function App() {
   return <div className="App">
-    {/* <TestNotify/> */}
-    <TrackingStakingPool/>
+    {/* <TestNotify /> */}
+    <TrackingStakingPool />
   </div>;
 }
 
