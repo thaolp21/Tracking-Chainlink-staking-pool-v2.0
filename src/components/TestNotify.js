@@ -9,9 +9,6 @@ const TestNotify = () => {
     const notificationObj = new Notification("Tracking Chainlink Staking Pool V2.0", {
         body: "You are in Test Nofity page!" + val,
       });
-      // notificationObj.onclick((noti,e) => {
-      //   window.location.href = 'http://localhost:3000/'
-      // })
     return notificationObj
   }
   
