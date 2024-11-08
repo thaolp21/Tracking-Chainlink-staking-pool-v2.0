@@ -15,6 +15,7 @@ const web3 = createAlchemyWeb3(API_URL_ETH_MAINNET);
 const baseUrlBotTelegram =
   "https://api.telegram.org/bot7936917115:AAFj5ibbT9fnrfDpZs5YBWhjV_J6zOCKdEQ";
 const teleChatIdTest = "1614996255";
+const teleChatChannel = "@chainlink_staking_pool";
 
 const TrackingStakingPool = () => {
   const [maxAmount, setMaxAmount] = useState(40875000);
@@ -28,67 +29,101 @@ const TrackingStakingPool = () => {
     contractABI,
     CHAINLINK_STAKING_CONTRACT_ADDRESS
   );
+
   function calculateAmount(amount) {
     return (amount / 1e18).toFixed(0);
   }
+
   function convertToLocaleString(num) {
     return Number(num).toLocaleString();
   }
+
   function calcRemainAmount(currAmount) {
-    return (maxAmount - currAmount).toFixed(0)
+    return (maxAmount - currAmount).toFixed(0);
   }
-  async function sendNotification(amount) {
+
+  function sendNotification(amount) {
     if ("Notification" in window && Notification.permission === "granted") {
       new Notification("Tracking Chainlink Staking Pool V2.0", {
-        body:  `The remain amount is: ${convertToLocaleString(amount)}`,
+        body: `Remaining allotment: ${convertToLocaleString(amount)}`,
       });
     }
   }
+
   function sendTelegramNotification(
     status,
     amount,
     newTotalPrincipal,
     remainAmount
   ) {
-    axios
-      .post(
-        `${baseUrlBotTelegram}/sendMessage`,
-        {
-          chat_id: teleChatIdTest,
-          text: `Someone has just ${status}: ${convertToLocaleString(amount)} LINK. The current amount staked in the pool ${convertToLocaleString(newTotalPrincipal)} LINK. The remain amounts are: ${convertToLocaleString(remainAmount)}`,
-        },
-        {
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        }
-      )
-      .then((res) => console.log(res));
+    try {
+      axios
+        .post(
+          `${baseUrlBotTelegram}/sendMessage`,
+          {
+            chat_id: teleChatChannel,
+            text: `Someone has just ${status.toLowerCase()}: ${convertToLocaleString(
+              amount
+            )} LINK. The current amounts staked in the pool ${convertToLocaleString(
+              newTotalPrincipal
+            )} LINK. Remaining allotment: ${convertToLocaleString(
+              remainAmount
+            )} LINK`,
+            disable_notification: true,
+          },
+          {
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          }
+        )
+        .then();
+    } catch (error) {
+      alert(error.message);
+    }
   }
 
-  async function listenSmartContractEvent(eventName) {
+  function setStateAndSendNotification(principal, dataEvent) {
+    const principalInteger = calculateAmount(principal);
+    const remainAmount = calcRemainAmount(principalInteger);
+
+    setCurrentAmountStaked(principalInteger);
+    setRemainAmount(remainAmount);
+
+    if (dataEvent) {
+      console.log("sendNoti");
+
+      const { eventName, amount } = dataEvent;
+      const amountChanged = calculateAmount(amount);
+
+      setStatus(`${eventName}: ${amountChanged}`);
+
+      if (remainAmount) {
+        sendNotification(remainAmount);
+        sendTelegramNotification(
+          eventName,
+          amountChanged,
+          principalInteger,
+          remainAmount
+        );
+      }
+    }
+  }
+  function fakeEvent() {
+    const principal = 40874000 * 1e18;
+    const amount = 1000 * 1e18;
+    setStateAndSendNotification(principal, { eventName: "Unstaked", amount });
+  }
+  function listenSmartContractEvent(eventName) {
     chainlinkStakingPoolContract.events[eventName]({}, (error, data) => {
       if (error) {
         console.log(error);
       } else {
-        console.log(data.returnValues);
         // returnValues: [address staker, uint256 amount, uint256 newStake, uint256 newTotalPrincipal]
-        const amount = calculateAmount(data.returnValues[1]);
-        const newTotalPrincipal = calculateAmount(data.returnValues[3]);
-        setCurrentAmountStaked(newTotalPrincipal);
-        setStatus(`${eventName}: ${amount}`);
-        const remainAmount = calcRemainAmount(newTotalPrincipal)
-        if (remainAmount) {
-          sendNotification(remainAmount);
-          sendTelegramNotification(
-            eventName,
-            amount,
-            newTotalPrincipal,
-            remainAmount
-          );
-        }
+
+        const { amount, newTotalPrincipal } = data.returnValues;
+
+        setStateAndSendNotification(newTotalPrincipal, { eventName, amount });
       }
     });
-    const pastEvents = await chainlinkStakingPoolContract.getPastEvents();
-    console.log(pastEvents);
   }
 
   /* 
@@ -111,6 +146,7 @@ const TrackingStakingPool = () => {
     listenSmartContractEvent("Unstaked");
     listenSmartContractEvent("Staked");
   }
+
   useEffect(() => {
     async function fetchData() {
       const maxPoolSize = await chainlinkStakingPoolContract.methods
@@ -119,22 +155,27 @@ const TrackingStakingPool = () => {
       const totalAmountStaked = await chainlinkStakingPoolContract.methods
         .getTotalPrincipal()
         .call();
-        const totalAmountStakedInInteger = calculateAmount(totalAmountStaked)
-      setMaxAmount(calculateAmount(maxPoolSize));
-      setCurrentAmountStaked(totalAmountStakedInInteger);
-      setRemainAmount(calcRemainAmount(totalAmountStakedInInteger))
-    }
 
+      setMaxAmount(calculateAmount(maxPoolSize));
+      setStateAndSendNotification(totalAmountStaked);
+    }
     fetchData();
     checkPoolChanged();
   }, []);
 
   return (
     <div>
-      <p>The the maximum amount that can be staked in the pool: {convertToLocaleString(maxAmount)}</p>
-      <p>The total amount staked in the pool: {convertToLocaleString(currentAmountStaked)}</p>
+      <p>
+        The the maximum amount that can be staked in the pool:{" "}
+        {convertToLocaleString(maxAmount)}
+      </p>
+      <p>
+        The total amount staked in the pool:{" "}
+        {convertToLocaleString(currentAmountStaked)}
+      </p>
       <p>The remaining slot amounts : {convertToLocaleString(remainAmount)}</p>
       <p>status: {status}</p>
+      <button onClick={fakeEvent}>trigger event smart contract</button>
     </div>
   );
 };
