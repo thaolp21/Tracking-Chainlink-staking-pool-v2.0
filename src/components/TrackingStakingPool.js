@@ -61,7 +61,7 @@ const TrackingStakingPool = () => {
         .post(
           `${baseUrlBotTelegram}/sendMessage`,
           {
-            chat_id: teleChatChannel,
+            chat_id: teleChatIdTest,
             text: `Someone has just ${status.toLowerCase()}: ${convertToLocaleString(
               amount
             )} LINK. The current amounts staked in the pool ${convertToLocaleString(
@@ -83,10 +83,10 @@ const TrackingStakingPool = () => {
 
   function setStateAndSendNotification(principal, dataEvent) {
     const principalInteger = calculateAmount(principal);
-    const remainAmount = calcRemainAmount(principalInteger);
+    const remainAllotment = calcRemainAmount(principalInteger);
 
     setCurrentAmountStaked(principalInteger);
-    setRemainAmount(remainAmount);
+    setRemainAmount(remainAllotment);
 
     if (dataEvent) {
       console.log("sendNoti");
@@ -96,13 +96,13 @@ const TrackingStakingPool = () => {
 
       setStatus(`${eventName}: ${amountChanged}`);
 
-      if (remainAmount) {
-        sendNotification(remainAmount);
+      if (remainAllotment) {
+        sendNotification(remainAllotment);
         sendTelegramNotification(
           eventName,
           amountChanged,
           principalInteger,
-          remainAmount
+          remainAllotment
         );
       }
     }
@@ -120,7 +120,7 @@ const TrackingStakingPool = () => {
         // returnValues: [address staker, uint256 amount, uint256 newStake, uint256 newTotalPrincipal]
 
         const { amount, newTotalPrincipal } = data.returnValues;
-
+        console.log(data);
         setStateAndSendNotification(newTotalPrincipal, { eventName, amount });
       }
     });
