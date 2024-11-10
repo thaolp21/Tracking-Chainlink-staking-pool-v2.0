@@ -1,6 +1,11 @@
 import { createAlchemyWeb3 } from "@alch/alchemy-web3";
 import contractABI from "../contract-abi.json";
 import { useEffect, useState } from "react";
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
 
 import React from "react";
 import axios from "axios";
@@ -42,10 +47,16 @@ const TrackingStakingPool = () => {
     return (maxAmount - currAmount).toFixed(0);
   }
 
-  function sendNotification(amount) {
+  function sendNotification(status, amount, newTotalPrincipal, remainAmount) {
     if ("Notification" in window && Notification.permission === "granted") {
       new Notification("Tracking Chainlink Staking Pool V2.0", {
-        body: `Remaining allotment: ${convertToLocaleString(amount)}`,
+        body: `Someone has just ${status.toLowerCase()}: ${convertToLocaleString(
+          amount
+        )} LINK. The current amounts staked in the pool ${convertToLocaleString(
+          newTotalPrincipal
+        )} LINK. Remaining allotment: ${convertToLocaleString(
+          remainAmount
+        )} LINK`,
       });
     }
   }
@@ -61,7 +72,7 @@ const TrackingStakingPool = () => {
         .post(
           `${baseUrlBotTelegram}/sendMessage`,
           {
-            chat_id: teleChatIdTest,
+            chat_id: teleChatChannel,
             text: `Someone has just ${status.toLowerCase()}: ${convertToLocaleString(
               amount
             )} LINK. The current amounts staked in the pool ${convertToLocaleString(
@@ -89,15 +100,19 @@ const TrackingStakingPool = () => {
     setRemainAmount(remainAllotment);
 
     if (dataEvent) {
-      console.log("sendNoti");
-
       const { eventName, amount } = dataEvent;
       const amountChanged = calculateAmount(amount);
 
       setStatus(`${eventName}: ${amountChanged}`);
 
       if (remainAllotment) {
-        sendNotification(remainAllotment);
+        console.log(eventName);
+        sendNotification(
+          eventName,
+          amountChanged,
+          principalInteger,
+          remainAllotment
+        );
         sendTelegramNotification(
           eventName,
           amountChanged,
@@ -107,11 +122,6 @@ const TrackingStakingPool = () => {
       }
     }
   }
-  function fakeEvent() {
-    const principal = 40874000 * 1e18;
-    const amount = 1000 * 1e18;
-    setStateAndSendNotification(principal, { eventName: "Unstaked", amount });
-  }
   function listenSmartContractEvent(eventName) {
     chainlinkStakingPoolContract.events[eventName]({}, (error, data) => {
       if (error) {
@@ -120,7 +130,6 @@ const TrackingStakingPool = () => {
         // returnValues: [address staker, uint256 amount, uint256 newStake, uint256 newTotalPrincipal]
 
         const { amount, newTotalPrincipal } = data.returnValues;
-        console.log(data);
         setStateAndSendNotification(newTotalPrincipal, { eventName, amount });
       }
     });
@@ -162,21 +171,30 @@ const TrackingStakingPool = () => {
     fetchData();
     checkPoolChanged();
   }, []);
-
+  const content = (data) => {
+    return <Typography sx={{ p: 1, fontWeight: 'bold', fontSize: '1.2rem' }}>
+      {(data * 1) ? convertToLocaleString(data) : data}
+    </Typography>
+  };
   return (
-    <div>
-      <p>
-        The the maximum amount that can be staked in the pool:{" "}
-        {convertToLocaleString(maxAmount)}
-      </p>
-      <p>
-        The total amount staked in the pool:{" "}
-        {convertToLocaleString(currentAmountStaked)}
-      </p>
-      <p>The remaining slot amounts : {convertToLocaleString(remainAmount)}</p>
-      <p>status: {status}</p>
-      <button onClick={fakeEvent}>trigger event smart contract</button>
-    </div>
+
+    <Card sx={{ minWidth: 275 }}>
+      <CardContent>
+        <Typography variant="h4" component="div" sx={{ p: 2 }}>
+          Chainlink staking pool V2.0
+        </Typography>
+        <Divider textAlign="left">POOL SIZE</Divider>
+        {content(maxAmount)}
+        <Divider textAlign="left">CURRENT STAKED</Divider>
+        {content(currentAmountStaked)}
+        <Divider textAlign="left">REMAIN ALLOTMENT</Divider>
+        {content(remainAmount)}
+        <Divider textAlign="right">STATUS</Divider>
+        {content(status)}
+      </CardContent>
+
+    </Card >
+
   );
 };
 
