@@ -1,7 +1,6 @@
 import { createAlchemyWeb3 } from "@alch/alchemy-web3";
 import contractABI from "../contract-abi.json";
 import { useEffect, useState } from "react";
-import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
@@ -27,9 +26,6 @@ const TrackingStakingPool = () => {
   const [currentAmountStaked, setCurrentAmountStaked] = useState(0);
   const [remainAmount, setRemainAmount] = useState(0);
   const [status, setStatus] = useState("nothing changes");
-  const [grantedPermission, setGrantedPermission] = useState(
-    Notification?.permission === "granted"
-  );
   const chainlinkStakingPoolContract = new web3.eth.Contract(
     contractABI,
     CHAINLINK_STAKING_CONTRACT_ADDRESS
@@ -47,23 +43,19 @@ const TrackingStakingPool = () => {
     return (maxAmount - currAmount).toFixed(0);
   }
 
-  function sendNotification(status, amount, newTotalPrincipal, remainAmount) {
+  function sendNotification(newTotalPrincipal, remainAmount) {
     if ("Notification" in window && Notification.permission === "granted") {
       new Notification("Tracking Chainlink Staking Pool V2.0", {
-        body: `Someone has just ${status.toLowerCase()}: ${convertToLocaleString(
-          amount
-        )} LINK. The current amounts staked in the pool ${convertToLocaleString(
+        body: `Amounts in the pool: ${convertToLocaleString(
           newTotalPrincipal
-        )} LINK. Remaining allotment: ${convertToLocaleString(
+        )} LINK.\nRemain allotment: ${convertToLocaleString(
           remainAmount
-        )} LINK`,
+        )} LINK.`,
       });
     }
   }
 
   function sendTelegramNotification(
-    status,
-    amount,
     newTotalPrincipal,
     remainAmount
   ) {
@@ -73,13 +65,11 @@ const TrackingStakingPool = () => {
           `${baseUrlBotTelegram}/sendMessage`,
           {
             chat_id: teleChatChannel,
-            text: `Someone has just ${status.toLowerCase()}: ${convertToLocaleString(
-              amount
-            )} LINK. The current amounts staked in the pool ${convertToLocaleString(
+            text: `Amounts in the pool: ${convertToLocaleString(
               newTotalPrincipal
-            )} LINK. Remaining allotment: ${convertToLocaleString(
+            )} LINK.\nRemain allotment: ${convertToLocaleString(
               remainAmount
-            )} LINK`,
+            )} LINK.`,
             disable_notification: true,
           },
           {
@@ -106,16 +96,11 @@ const TrackingStakingPool = () => {
       setStatus(`${eventName}: ${amountChanged}`);
 
       if (remainAllotment) {
-        console.log(eventName);
         sendNotification(
-          eventName,
-          amountChanged,
           principalInteger,
           remainAllotment
         );
         sendTelegramNotification(
-          eventName,
-          amountChanged,
           principalInteger,
           remainAllotment
         );
@@ -192,7 +177,6 @@ const TrackingStakingPool = () => {
         <Divider textAlign="right">STATUS</Divider>
         {content(status)}
       </CardContent>
-
     </Card >
 
   );
