@@ -1,10 +1,10 @@
 import { createAlchemyWeb3 } from "@alch/alchemy-web3";
 import contractABI from "../contract-abi.json";
 import { useEffect, useState } from "react";
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
 
 import React from "react";
 import axios from "axios";
@@ -19,7 +19,7 @@ const web3 = createAlchemyWeb3(API_URL_ETH_MAINNET);
 const baseUrlBotTelegram =
   "https://api.telegram.org/bot7936917115:AAFj5ibbT9fnrfDpZs5YBWhjV_J6zOCKdEQ";
 const teleChatIdTest = "1614996255";
-const teleChatChannel = "@chainlink_staking_pool";
+const teleChatChannel = "-1002330285073";
 
 const TrackingStakingPool = () => {
   const [maxAmount, setMaxAmount] = useState(40875000);
@@ -55,10 +55,7 @@ const TrackingStakingPool = () => {
     }
   }
 
-  function sendTelegramNotification(
-    newTotalPrincipal,
-    remainAmount
-  ) {
+  function sendTelegramNotification(newTotalPrincipal, remainAmount) {
     try {
       axios
         .post(
@@ -96,14 +93,8 @@ const TrackingStakingPool = () => {
       setStatus(`${eventName}: ${amountChanged}`);
 
       if (remainAllotment) {
-        sendNotification(
-          principalInteger,
-          remainAllotment
-        );
-        sendTelegramNotification(
-          principalInteger,
-          remainAllotment
-        );
+        sendNotification(principalInteger, remainAllotment);
+        sendTelegramNotification(principalInteger, remainAllotment);
       }
     }
   }
@@ -157,12 +148,13 @@ const TrackingStakingPool = () => {
     checkPoolChanged();
   }, []);
   const content = (data) => {
-    return <Typography sx={{ p: 1, fontWeight: 'bold', fontSize: '1.2rem' }}>
-      {(data * 1) ? convertToLocaleString(data) : data}
-    </Typography>
+    return (
+      <Typography sx={{ p: 1, fontWeight: "bold", fontSize: "1.2rem" }}>
+        {data * 1 ? convertToLocaleString(data) : data}
+      </Typography>
+    );
   };
   return (
-
     <Card sx={{ minWidth: 275 }}>
       <CardContent>
         <Typography variant="h4" component="div" sx={{ p: 2 }}>
@@ -177,8 +169,7 @@ const TrackingStakingPool = () => {
         <Divider textAlign="right">STATUS</Divider>
         {content(status)}
       </CardContent>
-    </Card >
-
+    </Card>
   );
 };
 
