@@ -61,7 +61,7 @@ const TrackingStakingPool = () => {
         .post(
           `${baseUrlBotTelegram}/sendMessage`,
           {
-            chat_id: teleChatChannel,
+            chat_id: teleChatIdTest,
             text: `Amounts in the pool: ${convertToLocaleString(
               newTotalPrincipal
             )} LINK.\nRemain allotment: ${convertToLocaleString(
