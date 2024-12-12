@@ -5,9 +5,9 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
-
 import React from "react";
-import axios from "axios";
+
+
 const API_URL_ETH_SEPOLIA =
   "wss://eth-sepolia.g.alchemy.com/v2/mke1U-smGOrgpPpAjVJcAFp5_WPRpOn5";
 const API_URL_ETH_MAINNET =
@@ -15,11 +15,6 @@ const API_URL_ETH_MAINNET =
 const CHAINLINK_STAKING_CONTRACT_ADDRESS =
   "0xBc10f2E862ED4502144c7d632a3459F49DFCDB5e";
 const web3 = createAlchemyWeb3(API_URL_ETH_MAINNET);
-
-const baseUrlBotTelegram =
-  "https://api.telegram.org/bot7936917115:AAFj5ibbT9fnrfDpZs5YBWhjV_J6zOCKdEQ";
-const teleChatIdTest = "1614996255";
-const teleChatChannel = "-1002330285073";
 
 const TrackingStakingPool = () => {
   const [maxAmount, setMaxAmount] = useState(40875000);
@@ -55,29 +50,6 @@ const TrackingStakingPool = () => {
     }
   }
 
-  function sendTelegramNotification(newTotalPrincipal, remainAmount) {
-    try {
-      axios
-        .post(
-          `${baseUrlBotTelegram}/sendMessage`,
-          {
-            chat_id: teleChatIdTest,
-            text: `Amounts in the pool: ${convertToLocaleString(
-              newTotalPrincipal
-            )} LINK.\nRemain allotment: ${convertToLocaleString(
-              remainAmount
-            )} LINK.`,
-            disable_notification: true,
-          },
-          {
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          }
-        )
-        .then();
-    } catch (error) {
-      alert(error.message);
-    }
-  }
 
   function setStateAndSendNotification(principal, dataEvent) {
     const principalInteger = calculateAmount(principal);
@@ -94,7 +66,6 @@ const TrackingStakingPool = () => {
 
       if (remainAllotment) {
         sendNotification(principalInteger, remainAllotment);
-        sendTelegramNotification(principalInteger, remainAllotment);
       }
     }
   }
@@ -110,22 +81,6 @@ const TrackingStakingPool = () => {
       }
     });
   }
-
-  /* 
-  #TODO: Handle case NotificationPermission === "denied" or permission is blocked
-   Handle Notification:
-    Defined: [rnpr] request-noti-permission-range (button askPermission + warning text + instruction to turn on notification in browser)
-    1. First render: checkPermission ? (hide rnpr) : (display rnpr)
-    2. If user denied -> display rnpr, if yes -> hide rnpr
-    [Optional] 3. Handle onclick in notification of browser
-    --Noted-- askPermission must be in a user gesture (mean clicking or tabbing a button)
-  */
-
-  /* #TODO: Implement wallet -> tracking amount and total pricipal of this wallet or need a input to take an address and tracking this one
-   */
-
-  /* #TODO: Style UI
-   */
 
   function checkPoolChanged() {
     listenSmartContractEvent("Unstaked");
